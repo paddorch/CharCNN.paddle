@@ -5,7 +5,7 @@ from paddlenlp.datasets import load_dataset
 from paddlenlp.data import Stack
 from tqdm import tqdm
 
-from char_cnn.models import Tokenizer, CharCNN
+from char_cnn.model import Tokenizer, CharCNN
 
 
 def main():

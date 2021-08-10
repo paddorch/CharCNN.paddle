@@ -4,6 +4,7 @@
 # import torch
 import json
 import csv
+import numpy as np
 
 import paddle
 from paddle.io import Dataset, DataLoader
@@ -47,13 +48,13 @@ class AGNEWs(Dataset):
                 txt = ' '.join(row[1:])
                 if lowercase:
                     txt = txt.lower()
-                self.data.append(txt)
+                self.data.append(txt[:self.l0])  # max length
 
-        self.y = paddle.to_tensor(self.label, dtype='int64')
+        self.y = self.label
 
     def oneHotEncode(self, idx):
         # X = (batch, 70, sequence_length)
-        X = paddle.zeros((len(self.alphabet), self.l0))
+        X = np.zeros((len(self.alphabet), self.l0), dtype="float32")
         sequence = self.data[idx]
         for index_char, char in enumerate(sequence[::-1]):
             if self.char2Index(char) != -1:
@@ -77,11 +78,12 @@ if __name__ == '__main__':
     alphabet_path = 'alphabet.json'
 
     train_dataset = AGNEWs(label_data_path, alphabet_path)
-    train_loader = DataLoader(train_dataset, batch_size=64, num_workers=0, drop_last=False)  # ERROR: num_workers > 0
+    train_loader = DataLoader(train_dataset, batch_size=64, num_workers=4, drop_last=False)  # ERROR: num_workers > 0
 
     # size = 0
     for i_batch, sample_batched in enumerate(train_loader):
         if i_batch == 0:
+            print(sample_batched)
             print(sample_batched[0][0][0].shape)
 
         # print(sample_batched)

@@ -3,14 +3,14 @@ import argparse
 import datetime
 import sys
 import errno
-from model import CharCNN
-from data_loader import AGNEWs
-from torch.utils.data import DataLoader
-import torch
-from torch import nn
-from torch.autograd import Variable
-import torch.nn.functional as F
-from metric import print_f_score
+
+import paddle
+from paddle.io import DataLoader
+import paddle.nn.functional as F
+
+from model.char_cnn import CharCNN
+from model.data_loader import AGNEWs
+from model.metric import print_f_score
 
 parser = argparse.ArgumentParser(description='Character level CNN text classifier testing',
                                  formatter_class=argparse.RawTextHelpFormatter)
@@ -26,7 +26,7 @@ parser.add_argument('--kernel-sizes', type=str, default='3,4,5',
 parser.add_argument('--test-path', metavar='DIR',
                     help='path to testing data csv', default='data/ag_news_csv/test.csv')
 parser.add_argument('--batch-size', type=int, default=20, help='batch size for training [default: 128]')
-parser.add_argument('--alphabet-path', default='alphabet.json', help='Contains all characters for prediction')
+parser.add_argument('--alphabet-path', default='config/alphabet.json', help='Contains all characters for prediction')
 # device
 parser.add_argument('--num-workers', default=4, type=int, help='Number of workers used in data-loading')
 parser.add_argument('--cuda', action='store_true', default=True, help='enable the gpu')
@@ -34,8 +34,8 @@ parser.add_argument('--cuda', action='store_true', default=True, help='enable th
 parser.add_argument('--save-folder', default='Results/', help='Location to save epoch models')
 args = parser.parse_args()
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     # load testing data
     print("\nLoading testing data...")
     test_dataset = AGNEWs(label_data_path=args.test_path, alphabet_path=args.alphabet_path)
@@ -48,15 +48,15 @@ if __name__ == '__main__':
         print("\tLabel {:d}:".format(i).ljust(15) + "{:d}".format(c).rjust(8))
 
     args.num_features = len(test_dataset.alphabet)
-    model = CharCNN(args)
+    model = CharCNN(args.num_features, len(num_class_test), args.dropout)
     print("=> loading weights from '{}'".format(args.model_path))
     assert os.path.isfile(args.model_path), "=> no checkpoint found at '{}'".format(args.model_path)
-    checkpoint = torch.load(args.model_path)
-    model.load_state_dict(checkpoint['state_dict'])
+    checkpoint = paddle.load(args.model_path)
+    model.set_state_dict(checkpoint['state_dict'])
 
     # using GPU
-    if args.cuda:
-        model = torch.nn.DataParallel(model).cuda()
+    # if args.cuda:
+    #     model = torch.nn.DataParallel(model).cuda()
 
     model.eval()
     corrects, avg_loss, accumulated_loss, size = 0, 0, 0, 0
@@ -64,25 +64,23 @@ if __name__ == '__main__':
     print('\nTesting...')
     for i_batch, (data) in enumerate(test_loader):
         inputs, target = data
-        target.sub_(1)
+        inputs = paddle.to_tensor(inputs)
+        target = paddle.to_tensor(target)
         size += len(target)
-        if args.cuda:
-            inputs, target = inputs.cuda(), target.cuda()
 
-        inputs = Variable(inputs, volatile=True)
-        target = Variable(target)
         logit = model(inputs)
-        predicates = torch.max(logit, 1)[1].view(target.size()).data
-        accumulated_loss += F.nll_loss(logit, target, size_average=False).data.item()
+        predicates = paddle.argmax(logit, 1)
+        accumulated_loss += F.nll_loss(logit, target).numpy()[0]
         # print(type(target.data))
-        corrects += torch.sum(torch.max(logit, 1)[1].view(target.size()).data == target.data)
+        corrects += paddle.to_tensor((paddle.argmax(logit, 1) == target), dtype='int64').sum().numpy()[0]
         predicates_all += predicates.cpu().numpy().tolist()
-        target_all += target.data.cpu().numpy().tolist()
+        target_all += target.cpu().numpy().tolist()
 
     avg_loss = accumulated_loss / size
     accuracy = 100.0 * corrects / size
-    print('\rEvaluation - loss: {:.6f}  acc: {:.3f}%({}/{}) '.format(avg_loss,
+    print('\rEvaluation - loss: {:.6f}  acc: {:.2f}%({}/{}) error: {:.2f}'.format(avg_loss,
                                                                      accuracy,
                                                                      corrects,
-                                                                     size))
+                                                                     size,
+                                                                     100 - accuracy))
     print_f_score(predicates_all, target_all)

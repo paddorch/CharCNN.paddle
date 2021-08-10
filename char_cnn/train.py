@@ -5,37 +5,32 @@ import errno
 import sys
 import os
 
-# from torch.utils.data import DataLoader
-# from torch.autograd import Variable
-# import torch.nn.functional as F
-# from torch import optim
-# from torch import nn
-
 import paddle
 import paddle.nn as nn
 import paddle.nn.functional as F
 from paddle import optimizer
 from paddle.io import DataLoader
 
-from metric import print_f_score
-from data_loader import AGNEWs
-from model import CharCNN
+from model.metric import print_f_score
+from model.data_loader import AGNEWs
+from model.char_cnn import CharCNN
 
 parser = argparse.ArgumentParser(description='Character level CNN text classifier training')
 # data 
 parser.add_argument('--train_path', metavar='DIR',
                     help='path to training data csv [default: data/ag_news_csv/train.csv]',
-                    default='../data/ag_news_csv/train.csv')
+                    default='data/ag_news_csv/train.csv')  # TODO
 parser.add_argument('--val_path', metavar='DIR',
                     help='path to validation data csv [default: data/ag_news_csv/test.csv]',
-                    default='../data/ag_news_csv/test.csv')
+                    default='data/ag_news_csv/test.csv')
 # learning
 learn = parser.add_argument_group('Learning options')
 learn.add_argument('--lr', type=float, default=0.0001, help='initial learning rate [default: 0.0001]')
 learn.add_argument('--epochs', type=int, default=200, help='number of epochs for train [default: 200]')
-learn.add_argument('--batch_size', type=int, default=32, help='batch size for training [default: 128]')  # TODO 64
+learn.add_argument('--batch_size', type=int, default=64, help='batch size for training [default: 128]')  # TODO 64
 learn.add_argument('--max_norm', default=400, type=int, help='Norm cutoff to prevent explosion of gradients')
-learn.add_argument('--optimizer', default='Adam', help='Type of optimizer. SGD|Adam|AdamW are supported [default: Adam]')
+learn.add_argument('--optimizer', default='Adam',
+                   help='Type of optimizer. SGD|Adam|AdamW are supported [default: Adam]')
 learn.add_argument('--class_weight', default=None, action='store_true',
                    help='Weights should be a 1D Tensor assigning weight to each of the classes.')
 learn.add_argument('--dynamic_lr', action='store_true', default=False, help='Use dynamic learning schedule.')
@@ -45,15 +40,15 @@ learn.add_argument('--decay_factor', default=0.5, type=float,
                    help='Decay factor for reducing learning rate [default: 0.5]')
 # model (text classifier)
 cnn = parser.add_argument_group('Model options')
-cnn.add_argument('--alphabet_path', default='alphabet.json', help='Contains all characters for prediction')
+cnn.add_argument('--alphabet_path', default='config/alphabet.json', help='Contains all characters for prediction')
 cnn.add_argument('--l0', type=int, default=1014, help='maximum length of input sequence to CNNs [default: 1014]')
-cnn.add_argument('--shuffle', action='store_true', default=False, help='shuffle the data every epoch')
+cnn.add_argument('--shuffle', action='store_true', default=True, help='shuffle the data every epoch')
 cnn.add_argument('--dropout', type=float, default=0.5, help='the probability for dropout [default: 0.5]')
 cnn.add_argument('-kernel_num', type=int, default=100, help='number of each kind of kernel')
 cnn.add_argument('-kernel_sizes', type=str, default='3,4,5', help='comma-separated kernel size to use for convolution')
 # device
 device = parser.add_argument_group('Device options')
-device.add_argument('--num_workers', default=0, type=int, help='Number of workers used in data-loading')
+device.add_argument('--num_workers', default=8, type=int, help='Number of workers used in data-loading')
 device.add_argument('--cuda', action='store_true', default=True, help='enable the gpu')
 # experiment options
 experiment = parser.add_argument_group('Experiment options')
@@ -64,14 +59,14 @@ experiment.add_argument('--checkpoint', dest='checkpoint', default=True, action=
                         help='Enables checkpoint saving of model')
 experiment.add_argument('--checkpoint_per_batch', default=10000, type=int,
                         help='Save checkpoint per batch. 0 means never save [default: 10000]')
-experiment.add_argument('--save_folder', default='models_CharCNN',
+experiment.add_argument('--save_folder', default='output/models_AG_NEWS',  # TODO
                         help='Location to save epoch models, training configurations and results.')
 experiment.add_argument('--log_config', default=True, action='store_true', help='Store experiment configuration')
 experiment.add_argument('--log_result', default=True, action='store_true', help='Store experiment result')
-experiment.add_argument('--log_interval', type=int, default=1,
+experiment.add_argument('--log_interval', type=int, default=20,
                         help='how many steps to wait before logging training status [default: 1]')
-experiment.add_argument('--val_interval', type=int, default=200,
-                        help='how many steps to wait before vaidation [default: 200]')
+experiment.add_argument('--val_interval', type=int, default=600,
+                        help='how many steps to wait before vaidation [default: 400]')
 experiment.add_argument('--save_interval', type=int, default=1,
                         help='how many epochs to wait before saving [default:1]')
 
@@ -80,7 +75,8 @@ def train(train_loader, dev_loader, model, args):
     # dynamic learning scheme
     scheduler = args.lr
     if args.dynamic_lr and args.optimizer == 'SGD':
-        scheduler = optimizer.lr.MultiStepDecay(learning_rate=args.lr, milestones=args.milestones, gamma=args.decay_factor)
+        scheduler = optimizer.lr.MultiStepDecay(learning_rate=args.lr, milestones=args.milestones,
+                                                gamma=args.decay_factor)
         # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=10, threshold=1e-3)
 
     # optimization scheme
@@ -104,14 +100,12 @@ def train(train_loader, dev_loader, model, args):
             start_iter = 1
         else:
             start_iter += 1
-        model.load_state_dict(checkpoint['state_dict'])
+        model.set_state_dict(checkpoint['state_dict'])
         # optim.load_state_dict(checkpoint['optimizer'])  # TODO Paddle not support
     else:
         start_epoch = 1
         start_iter = 1
         best_acc = None
-
-
 
     model.train()
 
@@ -122,11 +116,9 @@ def train(train_loader, dev_loader, model, args):
         for i_batch, data in enumerate(train_loader, start=start_iter):
             _i_batch = i_batch
             inputs, target = data
+            inputs = paddle.to_tensor(inputs)
+            target = paddle.to_tensor(target)
 
-            # if args.cuda:
-            #     inputs, target = inputs.cuda(), target.cuda()
-
-            target = target.squeeze()
             logit = model(inputs)
             loss = F.nll_loss(logit, target)
             loss.backward()
@@ -139,21 +131,22 @@ def train(train_loader, dev_loader, model, args):
 
             if args.verbose:
                 print('\nTargets, Predicates')
-                print(paddle.concat((target.unsqueeze(1), paddle.unsqueeze(paddle.argmax(logit, 1).reshape(target.shape), 1)), 1))
+                print(paddle.concat(
+                    (target.unsqueeze(1), paddle.unsqueeze(paddle.argmax(logit, 1).reshape(target.shape), 1)), 1))
                 print('\nLogit')
                 print(logit)
 
             if i_batch % args.log_interval == 0:
                 corrects = paddle.to_tensor((paddle.argmax(logit, 1) == target), dtype='int64').sum().numpy()[0]
                 accuracy = 100.0 * corrects / args.batch_size
-                print('Epoch[{}] Batch[{}] - loss: {:.6f}  lr: {:.5f}  acc: {:.3f}% {}/{}'.format(epoch,
-                                                                                                    i_batch,
-                                                                                                    loss.numpy()[0],
-                                                                                                    optim._learning_rate,
-                                                                                                    accuracy,
-                                                                                                    corrects,
-                                                                                                    args.batch_size
-                                                                                            ))
+                print('Epoch[{}] Batch[{}] - loss: {:.5f}  lr: {:.5f}  acc: {:.2f}% {}/{}'.format(epoch,
+                                                                                                  i_batch,
+                                                                                                  loss.numpy()[0],
+                                                                                                  optim._learning_rate,
+                                                                                                  accuracy,
+                                                                                                  corrects,
+                                                                                                  args.batch_size,
+                                                                                                  ))
             if i_batch % args.val_interval == 0:
                 val_loss, val_acc = eval(dev_loader, model, epoch, i_batch, optim, args)
 
@@ -206,11 +199,12 @@ def eval(data_loader, model, epoch_train, batch_train, optim, args):
     avg_loss = accumulated_loss / size
     accuracy = 100.0 * corrects / size
     model.train()
-    print('\nEvaluation - loss: {:.6f}  lr: {:.5f}  acc: {:.3f} ({}/{}) '.format(avg_loss,
-                                                                                  optim._learning_rate,
-                                                                                  accuracy,
-                                                                                  corrects,
-                                                                                  size))
+    print('\nEvaluation - loss: {:.5f}  lr: {:.5f}  acc: {:.2f} ({}/{}) error: {:.2f}'.format(avg_loss,
+                                                                                 optim._learning_rate,
+                                                                                 accuracy,
+                                                                                 corrects,
+                                                                                 size,
+                                                                                 100.0 - accuracy))
     print_f_score(predicates_all, target_all)
     print('\n')
     if args.log_result:
@@ -225,8 +219,8 @@ def eval(data_loader, model, epoch_train, batch_train, optim, args):
 
 
 def save_checkpoint(model, state, filename):
-    model_is_cuda = next(model.parameters()).is_cuda
-    model = model.module if model_is_cuda else model
+    # model_is_cuda = next(model.parameters()).is_cuda
+    # model = model.module if model_is_cuda else model
     state['state_dict'] = model.state_dict()
     paddle.save(state, filename)
 
@@ -292,7 +286,7 @@ def main():
         with open(os.path.join(args.save_folder, 'result.csv'), 'w') as r:
             r.write('{:s},{:s},{:s},{:s},{:s}'.format('epoch', 'batch', 'loss', 'acc', 'lr'))
     # model
-    model = CharCNN(args.num_features, args.dropout)
+    model = CharCNN(args.num_features, len(num_class_train), args.dropout)
     print(model)
 
     # train 

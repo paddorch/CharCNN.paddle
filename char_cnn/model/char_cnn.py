@@ -4,7 +4,7 @@ import paddle.nn as nn
 
 
 class CharCNN(paddle.nn.Layer):
-    def __init__(self, num_features, dropout):
+    def __init__(self, num_features, num_classes, dropout):
         super(CharCNN, self).__init__()
         self.conv1 = nn.Sequential(
             nn.Conv1D(num_features, 256, kernel_size=7, stride=1),
@@ -50,7 +50,7 @@ class CharCNN(paddle.nn.Layer):
             nn.Dropout(p=dropout)
         )
 
-        self.fc3 = nn.Linear(1024, 4)
+        self.fc3 = nn.Linear(1024, num_classes)
         self.log_softmax = nn.LogSoftmax()
 
 
