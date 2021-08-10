@@ -1,8 +1,11 @@
+from time import perf_counter
+
 import paddle
 from paddlenlp.datasets import load_dataset
 from paddlenlp.data import Stack
+from tqdm import tqdm
 
-from char_cnn.models.tokenizer import Tokenizer
+from char_cnn.models import Tokenizer, CharCNN
 
 
 def main():
@@ -29,7 +32,9 @@ def main():
 
     dataset = 'imdb'
     max_len = 2000
-    batch_size = 32
+    batch_size = 256
+    num_epochs = 100
+    lr = 0.001
 
     train_dataset = load_dataset(dataset, splits='train')
     test_dataset = load_dataset(dataset, splits='test')
@@ -38,11 +43,77 @@ def main():
     train_loader = create_dataloader(train_dataset, tokenizer=tokenizer, shuffle=True, batch_size=batch_size)
     test_loader = create_dataloader(test_dataset, tokenizer=tokenizer, shuffle=False, batch_size=batch_size)
 
-    for data in train_loader:
-        print(data)
-        break
+    model = CharCNN(
+        max_length=max_len, vocab_size=tokenizer.alphabet_size, num_classes=len(train_dataset.label_list)
+    )
 
-    pass
+    optimizer = paddle.optimizer.Adam(learning_rate=lr, parameters=model.parameters())
+    criterion = paddle.nn.CrossEntropyLoss()
+
+    def accuracy(output, target):
+        prediction = paddle.argmax(output, axis=1)
+
+        total = output.shape[0]
+        correct = paddle.sum(prediction == target).item()
+
+        return total, correct
+
+    def evaluate():
+        model.eval()
+
+        total = 0
+        correct = 0
+        pbar = tqdm(total=len(test_dataset))
+        for data in test_loader:
+            input_ids, label = data
+
+            output = model(input_ids)
+
+            batch_total, batch_correct = accuracy(output, label)
+
+            total += batch_total
+            correct += batch_correct
+
+            pbar.update(batch_total)
+        pbar.close()
+
+        return correct / total
+
+    def train_step(epoch: int):
+        model.train()
+        optimizer.clear_grad()
+
+        epoch_loss = 0.0
+        total = 0
+        correct = 0
+
+        pbar = tqdm(total=len(train_dataset), desc=f'epoch {epoch:03d}')
+        for data in train_loader:
+            input_ids, label = data
+
+            output = model(input_ids)
+            loss = criterion(output, label)
+
+            loss.backward()
+            optimizer.step()
+
+            batch_total, batch_correct = accuracy(output, label)
+            total += batch_total
+            correct += batch_correct
+            epoch_loss += loss.item()
+
+            pbar.update(batch_total)
+            pbar.set_postfix({'loss': f'{loss.item():.4f}'})
+        pbar.close()
+
+        return epoch_loss, correct / total
+
+    for epoch in range(1, num_epochs + 1):
+        tic = perf_counter()
+        loss, acc = train_step(epoch)
+        toc = perf_counter()
+        print(f'epoch {epoch}, loss {loss:.4f}, train acc {acc:.4f}, time {toc - tic:.4f}')
+
 
 
 if __name__ == '__main__':

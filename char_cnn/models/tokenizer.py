@@ -17,6 +17,10 @@ class Tokenizer:
             self.char2idx[c] = i + 2
         self.idx2char = {i: c for c, i in self.char2idx.items()}
 
+    @property
+    def alphabet_size(self):
+        return len(self.char2idx.keys())
+
     def quantize(self, c: str):
         if c in self.char2idx:
             return self.char2idx[c]
