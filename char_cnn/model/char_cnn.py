@@ -77,7 +77,7 @@ class CharCNN(paddle.nn.Layer):
 
 
 def _test():
-    model = CharCNN(1, 1)
+    model = CharCNN(1, 1, 1)
 
 
 if __name__ == "__main__":

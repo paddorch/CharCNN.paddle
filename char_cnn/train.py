@@ -14,6 +14,9 @@ from paddle.io import DataLoader
 from model.metric import print_f_score
 from model.data_loader import AGNEWs
 from model.char_cnn import CharCNN
+from utils.utils import set_seed
+
+set_seed(42)
 
 parser = argparse.ArgumentParser(description='Character level CNN text classifier training')
 # data 
@@ -28,7 +31,7 @@ learn = parser.add_argument_group('Learning options')
 learn.add_argument('--lr', type=float, default=0.0001, help='initial learning rate [default: 0.0001]')
 learn.add_argument('--epochs', type=int, default=200, help='number of epochs for train [default: 200]')
 learn.add_argument('--batch_size', type=int, default=64, help='batch size for training [default: 128]')  # TODO 64
-learn.add_argument('--max_norm', default=400, type=int, help='Norm cutoff to prevent explosion of gradients')
+learn.add_argument('--grad_clip', default=5, type=int, help='Norm cutoff to prevent explosion of gradients')
 learn.add_argument('--optimizer', default='Adam',
                    help='Type of optimizer. SGD|Adam|AdamW are supported [default: Adam]')
 learn.add_argument('--class_weight', default=None, action='store_true',
@@ -79,13 +82,15 @@ def train(train_loader, dev_loader, model, args):
                                                 gamma=args.decay_factor)
         # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=10, threshold=1e-3)
 
+    # clip gradient
+    clip = paddle.nn.ClipGradByNorm(clip_norm=args.grad_clip)
     # optimization scheme
     if args.optimizer == 'Adam':
-        optim = optimizer.Adam(parameters=model.parameters(), learning_rate=args.lr)
+        optim = optimizer.Adam(parameters=model.parameters(), learning_rate=args.lr, grad_clip=clip)
     elif args.optimizer == 'SGD':
-        optim = optimizer.Momentum(parameters=model.parameters(), learning_rate=scheduler, momentum=0.9)
+        optim = optimizer.Momentum(parameters=model.parameters(), learning_rate=scheduler, momentum=0.9, grad_clip=clip)
     elif args.optimizer == 'AdamW':
-        optim = optimizer.AdamW(parameters=model.parameters(), learning_rate=args.lr)
+        optim = optimizer.AdamW(parameters=model.parameters(), learning_rate=args.lr, grad_clip=clip)
 
     # continue training from checkpoint model
     if args.continue_from:
@@ -200,11 +205,11 @@ def eval(data_loader, model, epoch_train, batch_train, optim, args):
     accuracy = 100.0 * corrects / size
     model.train()
     print('\nEvaluation - loss: {:.5f}  lr: {:.5f}  acc: {:.2f} ({}/{}) error: {:.2f}'.format(avg_loss,
-                                                                                 optim._learning_rate,
-                                                                                 accuracy,
-                                                                                 corrects,
-                                                                                 size,
-                                                                                 100.0 - accuracy))
+                                                                                              optim._learning_rate,
+                                                                                              accuracy,
+                                                                                              corrects,
+                                                                                              size,
+                                                                                              100.0 - accuracy))
     print_f_score(predicates_all, target_all)
     print('\n')
     if args.log_result:

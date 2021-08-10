@@ -56,7 +56,7 @@ class AGNEWs(Dataset):
         # X = (batch, 70, sequence_length)
         X = np.zeros((len(self.alphabet), self.l0), dtype="float32")
         sequence = self.data[idx]
-        for index_char, char in enumerate(sequence[::-1]):
+        for index_char, char in enumerate(sequence[::-1]):  # reverse
             if self.char2Index(char) != -1:
                 X[self.char2Index(char)][index_char] = 1.0
         return X
