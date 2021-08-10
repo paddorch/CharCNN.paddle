@@ -25,14 +25,15 @@ def main():
         data_loader = paddle.io.DataLoader(
             dataset,
             batch_sampler=batch_sampler,
-            collate_fn=collate, return_list=True
+            collate_fn=collate, return_list=True,
+            num_workers=16
         )
 
         return data_loader
 
     dataset = 'imdb'
     max_len = 2000
-    batch_size = 256
+    batch_size = 500
     num_epochs = 100
     lr = 0.001
 
@@ -58,12 +59,12 @@ def main():
 
         return total, correct
 
-    def evaluate():
+    def evaluate(epoch: int):
         model.eval()
 
         total = 0
         correct = 0
-        pbar = tqdm(total=len(test_dataset))
+        pbar = tqdm(total=len(test_dataset), desc=f'| E | epoch {epoch:03d}')
         for data in test_loader:
             input_ids, label = data
 
@@ -87,7 +88,7 @@ def main():
         total = 0
         correct = 0
 
-        pbar = tqdm(total=len(train_dataset), desc=f'epoch {epoch:03d}')
+        pbar = tqdm(total=len(train_dataset), desc=f'| T | epoch {epoch:03d}')
         for data in train_loader:
             input_ids, label = data
 
@@ -112,7 +113,12 @@ def main():
         tic = perf_counter()
         loss, acc = train_step(epoch)
         toc = perf_counter()
-        print(f'epoch {epoch}, loss {loss:.4f}, train acc {acc:.4f}, time {toc - tic:.4f}')
+        print(f'| T | epoch {epoch}, loss {loss:.4f}, train acc {acc:.4f}, time {toc - tic:.4f}')
+
+        tic = perf_counter()
+        eval_acc = evaluate(epoch)
+        toc = perf_counter()
+        print(f'| E | epoch {epoch}, eval acc {eval_acc:.4f}, time {toc - tic:.4f}')
 
 
 
