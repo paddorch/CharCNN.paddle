@@ -26,6 +26,7 @@ parser.add_argument('--train_path', metavar='DIR',
 parser.add_argument('--val_path', metavar='DIR',
                     help='path to validation data csv [default: data/ag_news_csv/test.csv]',
                     default='data/ag_news_csv/test.csv')
+parser.add_argument('--data_augment', type=bool, default=False, help='whether to use data augmentation')
 # learning
 learn = parser.add_argument_group('Learning options')
 learn.add_argument('--lr', type=float, default=0.0001, help='initial learning rate [default: 0.0001]')
@@ -53,7 +54,7 @@ cnn.add_argument('-kernel_sizes', type=str, default='3,4,5', help='comma-separat
 device = parser.add_argument_group('Device options')
 device.add_argument('--num_workers', default=8, type=int, help='Number of workers used in data-loading')
 device.add_argument('--cuda', action='store_true', default=True, help='enable the gpu')
-device.add_argument('--gpu', type=int, default=3)
+device.add_argument('--gpu', type=int, default=None)
 # experiment options
 experiment = parser.add_argument_group('Experiment options')
 experiment.add_argument('--verbose', dest='verbose', action='store_true', default=False,
@@ -231,9 +232,9 @@ def save_checkpoint(model, state, filename):
     paddle.save(state, filename)
 
 
-def make_data_loader(dataset_path, alphabet_path, l0, batch_size, num_workers):
+def make_data_loader(dataset_path, alphabet_path, l0, batch_size, num_workers, data_augment=False):
     print("\nLoading data from {}".format(dataset_path))
-    dataset = AGNEWs(label_data_path=dataset_path, alphabet_path=alphabet_path, l0=l0)
+    dataset = AGNEWs(label_data_path=dataset_path, alphabet_path=alphabet_path, l0=l0, data_augment=data_augment)
     dataset_loader = DataLoader(dataset, batch_size=batch_size, num_workers=num_workers, drop_last=True, shuffle=True)
     return dataset, dataset_loader
 
@@ -243,12 +244,12 @@ def main():
     # parse arguments
     args = parser.parse_args()
     # gpu
-    if args.cuda:
+    if args.cuda and args.gpu:
         paddle.set_device(f"gpu:{args.gpu}")
 
     # load train and dev data
     train_dataset, train_loader = make_data_loader(args.train_path,
-                                                   args.alphabet_path, args.l0, args.batch_size, args.num_workers)
+                                                   args.alphabet_path, args.l0, args.batch_size, args.num_workers, args.data_augment)
     dev_dataset, dev_loader = make_data_loader(args.val_path,
                                                args.alphabet_path, args.l0, args.batch_size, args.num_workers)
 
