@@ -26,7 +26,6 @@ A PaddlePaddle implementation of CharCNN.
     - 详见 `requirements.txt`
 
 ## 五、快速开始
-需要给出快速训练、预测、使用预训练模型预测的使用说明；
 
 ### Train
 1. 下载数据集到 `/data` 文件夹，并将训练集划分为 `train` 和 `dev`集：
@@ -53,11 +52,24 @@ bash eval_amz_full.sh
 
 > 将模型分别放置于 `output/models_yahoo_answers/` 和 `output/models_amz_full` 目录下，如上运行 `eval` bash 脚本即可测试模型。
 
-## 六、代码结构与详细说明
-需要用一小节描述整个项目的代码结构，用一小节描述项目的参数说明，之后各个小节详细的描述每个功能的使用说明；
+[comment]: <> (## 六、代码结构与详细说明)
 
-## 七、模型信息
-以表格的信息，给出模型相关的信息
+[comment]: <> (需要用一小节描述整个项目的代码结构，用一小节描述项目的参数说明，之后各个小节详细的描述每个功能的使用说明；)
 
-## 八、Reference
+[comment]: <> (## 七、模型信息)
+
+[comment]: <> (以表格的信息，给出模型相关的信息)
+
+## References
+```bibtex
+@article{zhang2015character,
+  title={Character-level convolutional networks for text classification},
+  author={Zhang, Xiang and Zhao, Junbo and LeCun, Yann},
+  journal={Advances in neural information processing systems},
+  volume={28},
+  pages={649--657},
+  year={2015}
+}
+```
+
 - https://github.com/srviest/char-cnn-text-classification-pytorch
