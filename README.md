@@ -1,31 +1,44 @@
 # CharCNN.paddle
 A PaddlePaddle implementation of CharCNN.
 
-## 一、简介
-简单的介绍模型，以及模型的主要架构或主要功能，如果能给出效果图，可以在简介的下方直接贴上图片，展示模型效果，然后另起一行，按如下格式给出论文及链接。
+## 1. Introduction
 
-论文:title
+![](images/model.png)
 
-## 二、复现精度
+论文: [Character-level Convolutional Networks for Text Classification](https://arxiv.org/pdf/1509.01626v3.pdf)
 
-|  数据集            | 论文 error rate | 复现 error rate | 对比  |
+## 2. Results
+
+|  Datasets          | Paper error rate| Our error rate  | constract |
 |--------------------|-----------------|-----------------|-------|
 | AG’s News          | 13.39           | 10.17           | +3.22 |
 | Yahoo! Answers     | 28.80           |                 | +     |
 | Amazon Review Full | 40.45           |                 | +     |
 
-## 三、数据集
+## 3. Dataset
 
 ![](images/datasets.png)
 
-## 四、环境依赖
+Format:
+```
+"class idx","sentence or text to be classified"  
+```
 
-- 硬件：建议用 GPU
-- 框架：
-    - PaddlePaddle >= 2.0.0
-    - 详见 `requirements.txt`
+Samples are separated by newline.
 
-## 五、快速开始
+Example:
+```shell
+"3","Fears for T N pension after talks, Unions representing workers at Turner   Newall say they are 'disappointed' after talks with stricken parent firm Federal Mogul."
+"4","The Race is On: Second Private Team Sets Launch Date for Human Spaceflight (SPACE.com)","SPACE.com - TORONTO, Canada -- A second\team of rocketeers competing for the  #36;10 million Ansari X Prize, a contest for\privately funded suborbital space flight, has officially announced the first\launch date for its manned rocket."
+```
+
+## 4. Requirement
+
+- Python >= 3
+- PaddlePaddle >= 2.0.0
+- see `requirements.txt`
+
+## 5. Usage
 
 ### Train
 1. 下载数据集到 `/data` 文件夹，并将训练集划分为 `train` 和 `dev`集：
@@ -33,10 +46,17 @@ A PaddlePaddle implementation of CharCNN.
 bash split_data.sh data/ag_news/train.csv
 ```
 
-2. 训练
+2. start train
 ```shell
 bash train_ag_news.sh
 ```
+
+### Download Trained model
+
+- [Yahoo! Answers]()
+- [Amazon Review Full]()
+
+> 将模型分别放置于 `output/models_yahoo_answers/` 和 `output/models_amz_full` 目录下，如下运行 `eval` bash 脚本即可测试模型。
 
 ### Test
 ```shell
@@ -44,13 +64,6 @@ bash eval_ag_news.sh
 bash eval_yahoo_answers.sh
 bash eval_amz_full.sh
 ```
-
-### 模型下载链接
-
-- [Yahoo! Answers]()
-- [Amazon Review Full]()
-
-> 将模型分别放置于 `output/models_yahoo_answers/` 和 `output/models_amz_full` 目录下，如上运行 `eval` bash 脚本即可测试模型。
 
 [comment]: <> (## 六、代码结构与详细说明)
 
