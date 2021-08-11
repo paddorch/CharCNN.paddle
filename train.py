@@ -54,7 +54,7 @@ cnn.add_argument('-kernel_sizes', type=str, default='3,4,5', help='comma-separat
 device = parser.add_argument_group('Device options')
 device.add_argument('--num_workers', default=8, type=int, help='Number of workers used in data-loading')
 device.add_argument('--cuda', action='store_true', default=True, help='enable the gpu')
-device.add_argument('--gpu', type=int, default=None)
+device.add_argument('--device', type=int, default=None)
 # experiment options
 experiment = parser.add_argument_group('Experiment options')
 experiment.add_argument('--verbose', dest='verbose', action='store_true', default=False,
@@ -236,8 +236,8 @@ def main():
     # parse arguments
     args = parser.parse_args()
     # gpu
-    if args.cuda and args.gpu:
-        paddle.set_device(f"gpu:{args.gpu}")
+    if args.cuda and args.device:
+        paddle.set_device(f"gpu:{args.device}")
 
     # load train and dev data
     train_dataset, train_loader = make_data_loader(args.train_path,
