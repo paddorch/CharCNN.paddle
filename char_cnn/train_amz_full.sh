@@ -3,5 +3,6 @@ python train.py \
   --val_path /home/xuyichen/.paddlenlp/datasets/AmazonReviewFull/amazon_review_full_csv/test.csv \
   --save_folder output/models_amz_full\
   --batch_size 64 \
+  --gpu 3 \
   --val_interval 2000 \
-  --gpu 3
+  --data_augment True
