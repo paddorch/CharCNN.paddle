@@ -3,6 +3,7 @@ import argparse
 import datetime
 import sys
 import errno
+from tqdm import tqdm
 
 import paddle
 from paddle.io import DataLoader
@@ -62,7 +63,7 @@ if __name__ == '__main__':
     corrects, avg_loss, accumulated_loss, size = 0, 0, 0, 0
     predicates_all, target_all = [], []
     print('\nTesting...')
-    for i_batch, (data) in enumerate(test_loader):
+    for i_batch, (data) in enumerate(tqdm(test_loader)):
         inputs, target = data
         inputs = paddle.to_tensor(inputs)
         target = paddle.to_tensor(target)
