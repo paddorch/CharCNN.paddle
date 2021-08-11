@@ -8,4 +8,4 @@ set -x
 in=$1
 train="$in.split_train"
 val="$in.split_val"
-awk -v train="$train" -v val="$val" '{if(rand()<0.90) {print > train} else {print > val}}' $in
+awk -v train="$train" -v val="$val" '{if(rand()<0.95) {print > train} else {print > val}}' $in
