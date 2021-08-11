@@ -58,10 +58,6 @@ if __name__ == '__main__':
     checkpoint = paddle.load(args.model_path)
     model.set_state_dict(checkpoint['state_dict'])
 
-    # using GPU
-    # if args.cuda:
-    #     model = torch.nn.DataParallel(model).cuda()
-
     model.eval()
     corrects, avg_loss, accumulated_loss, size = 0, 0, 0, 0
     predicates_all, target_all = [], []

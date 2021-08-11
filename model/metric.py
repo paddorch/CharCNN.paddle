@@ -72,7 +72,6 @@ def print_f_score(output, target):
 if __name__ == '__main__':
 
     import paddle
-    import torch.autograd as autograd
     output = [1,1,1,1,1,2,0,2,2,2,2]
     output = paddle.to_tensor(output, dtype="int64")
     # target = [0,0,2,1,2,2,1,2,1,2,0]

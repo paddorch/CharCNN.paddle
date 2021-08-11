@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-# from torch.utils.data import DataLoader, Dataset
-# import torch.autograd as autograd
-# import torch
 import json
 import csv
 import numpy as np

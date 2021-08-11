@@ -8,25 +8,28 @@ A PaddlePaddle implementation of CharCNN.
 
 ## 二、复现精度
 
-## 三、数据集
-给出数据集的链接，然后按格式描述数据集大小与数据集格式即可。
+|  数据集            | 论文 error rate | 复现 error rate | 对比  |
+|--------------------|-----------------|-----------------|-------|
+| AG’s News          | 13.39           | 10.17           | +3.22 |
+| Yahoo! Answers     | 28.80           |                 | +     |
+| Amazon Review Full | 40.45           |                 | +     |
 
-格式如下：
-- 数据集大小：关于数据集大小的描述，如类别，数量，图像大小等等；
-- 数据格式：关于数据集格式的说明
+## 三、数据集
+
+![](images/datasets.png)
 
 ## 四、环境依赖
-主要分为两部分介绍，一部分是支持的硬件，另一部分是框架等环境的要求，格式如下：
 
-- 硬件：
+- 硬件：建议用 GPU
 - 框架：
     - PaddlePaddle >= 2.0.0
+    - 详见 `requirements.txt`
 
 ## 五、快速开始
 需要给出快速训练、预测、使用预训练模型预测的使用说明；
 
 ### Train
-1. 准备数据集并划分`dev`集：
+1. 下载数据集到 `/data` 文件夹，并将训练集划分为 `train` 和 `dev`集：
 ```shell
 bash split_data.sh data/ag_news/train.csv
 ```
@@ -43,8 +46,18 @@ bash eval_yahoo_answers.sh
 bash eval_amz_full.sh
 ```
 
+### 模型下载链接
+
+- [Yahoo! Answers]()
+- [Amazon Review Full]()
+
+> 将模型分别放置于 `output/models_yahoo_answers/` 和 `output/models_amz_full` 目录下，如上运行 `eval` bash 脚本即可测试模型。
+
 ## 六、代码结构与详细说明
 需要用一小节描述整个项目的代码结构，用一小节描述项目的参数说明，之后各个小节详细的描述每个功能的使用说明；
 
 ## 七、模型信息
 以表格的信息，给出模型相关的信息
+
+## 八、Reference
+- https://github.com/srviest/char-cnn-text-classification-pytorch
