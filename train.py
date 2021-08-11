@@ -54,7 +54,7 @@ cnn.add_argument('-kernel_sizes', type=str, default='3,4,5', help='comma-separat
 device = parser.add_argument_group('Device options')
 device.add_argument('--num_workers', default=8, type=int, help='Number of workers used in data-loading')
 device.add_argument('--cuda', action='store_true', default=True, help='enable the gpu')
-device.add_argument('--gpu', type=int, default=None)
+device.add_argument('--device', type=int, default=None)
 # experiment options
 experiment = parser.add_argument_group('Experiment options')
 experiment.add_argument('--verbose', dest='verbose', action='store_true', default=False,
@@ -82,7 +82,6 @@ def train(train_loader, dev_loader, model, args):
     if args.dynamic_lr and args.optimizer == 'SGD':
         scheduler = optimizer.lr.MultiStepDecay(learning_rate=args.lr, milestones=args.milestones,
                                                 gamma=args.decay_factor)
-        # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, factor=0.5, patience=10, threshold=1e-3)
 
     # clip gradient
     clip = paddle.nn.ClipGradByNorm(clip_norm=args.grad_clip)
@@ -132,9 +131,6 @@ def train(train_loader, dev_loader, model, args):
             # nn.utils.clip_grad_norm(model.parameters(), args.max_norm)  # TODO
             optim.step()
             optim.clear_grad()
-
-            # if args.cuda:
-            #     torch.cuda.synchronize()
 
             if args.verbose:
                 print('\nTargets, Predicates')
@@ -200,8 +196,6 @@ def eval(data_loader, model, epoch_train, batch_train, optim, args):
         corrects += paddle.to_tensor((paddle.argmax(logit, 1) == target), dtype='int64').sum().numpy()[0]
         predicates_all += predicates.cpu().numpy().tolist()
         target_all += target.cpu().numpy().tolist()
-        # if args.cuda:
-        #     torch.cuda.synchronize()
 
     avg_loss = accumulated_loss / size
     accuracy = 100.0 * corrects / size
@@ -226,8 +220,6 @@ def eval(data_loader, model, epoch_train, batch_train, optim, args):
 
 
 def save_checkpoint(model, state, filename):
-    # model_is_cuda = next(model.parameters()).is_cuda
-    # model = model.module if model_is_cuda else model
     state['state_dict'] = model.state_dict()
     paddle.save(state, filename)
 
@@ -244,8 +236,8 @@ def main():
     # parse arguments
     args = parser.parse_args()
     # gpu
-    if args.cuda and args.gpu:
-        paddle.set_device(f"gpu:{args.gpu}")
+    if args.cuda and args.device:
+        paddle.set_device(f"gpu:{args.device}")
 
     # load train and dev data
     train_dataset, train_loader = make_data_loader(args.train_path,

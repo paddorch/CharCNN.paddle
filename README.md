@@ -1,40 +1,62 @@
 # CharCNN.paddle
 A PaddlePaddle implementation of CharCNN.
 
-## 一、简介
-简单的介绍模型，以及模型的主要架构或主要功能，如果能给出效果图，可以在简介的下方直接贴上图片，展示模型效果，然后另起一行，按如下格式给出论文及链接。
+## 1. Introduction
 
-论文:title
+![](images/model.png)
 
-## 二、复现精度
+论文: [Character-level Convolutional Networks for Text Classification](https://arxiv.org/pdf/1509.01626v3.pdf)
 
-## 三、数据集
-给出数据集的链接，然后按格式描述数据集大小与数据集格式即可。
+## 2. Results
 
-格式如下：
-- 数据集大小：关于数据集大小的描述，如类别，数量，图像大小等等；
-- 数据格式：关于数据集格式的说明
+|  Datasets          | Paper error rate| Our error rate  | constract |
+|--------------------|-----------------|-----------------|--------|
+| AG’s News          | 13.39           | 10.17           | +3.22  |
+| Yahoo! Answers     | 28.80           |                 | +      |
+| Amazon Review Full | 40.45           | 38.97           | +1.48  |
 
-## 四、环境依赖
-主要分为两部分介绍，一部分是支持的硬件，另一部分是框架等环境的要求，格式如下：
+## 3. Dataset
 
-- 硬件：
-- 框架：
-    - PaddlePaddle >= 2.0.0
+![](images/datasets.png)
 
-## 五、快速开始
-需要给出快速训练、预测、使用预训练模型预测的使用说明；
+Format:
+```
+"class idx","sentence or text to be classified"  
+```
+
+Samples are separated by newline.
+
+Example:
+```shell
+"3","Fears for T N pension after talks, Unions representing workers at Turner   Newall say they are 'disappointed' after talks with stricken parent firm Federal Mogul."
+"4","The Race is On: Second Private Team Sets Launch Date for Human Spaceflight (SPACE.com)","SPACE.com - TORONTO, Canada -- A second\team of rocketeers competing for the  #36;10 million Ansari X Prize, a contest for\privately funded suborbital space flight, has officially announced the first\launch date for its manned rocket."
+```
+
+## 4. Requirement
+
+- Python >= 3
+- PaddlePaddle >= 2.0.0
+- see `requirements.txt`
+
+## 5. Usage
 
 ### Train
-1. 准备数据集并划分`dev`集：
+1. 下载数据集到 `/data` 文件夹，并将训练集划分为 `train` 和 `dev`集：
 ```shell
 bash split_data.sh data/ag_news/train.csv
 ```
 
-2. 训练
+2. start train
 ```shell
 bash train_ag_news.sh
 ```
+
+### Download Trained model
+
+- [Yahoo! Answers]()
+- [Amazon Review Full]()
+
+> 将模型分别放置于 `output/models_yahoo_answers/` 和 `output/models_amz_full` 目录下，如下运行 `eval` bash 脚本即可测试模型。
 
 ### Test
 ```shell
@@ -43,8 +65,28 @@ bash eval_yahoo_answers.sh
 bash eval_amz_full.sh
 ```
 
-## 六、代码结构与详细说明
-需要用一小节描述整个项目的代码结构，用一小节描述项目的参数说明，之后各个小节详细的描述每个功能的使用说明；
+[comment]: <> (## 六、代码结构与详细说明)
 
-## 七、模型信息
-以表格的信息，给出模型相关的信息
+[comment]: <> (需要用一小节描述整个项目的代码结构，用一小节描述项目的参数说明，之后各个小节详细的描述每个功能的使用说明；)
+
+[comment]: <> (## 七、模型信息)
+
+[comment]: <> (以表格的信息，给出模型相关的信息)
+
+## Implementation Details
+### Data Augumentation
+We use [nlpaug](https://github.com/makcedward/nlpaug) to augment data, specifically, we substitute similar word according to `WordNet`.
+
+## References
+```bibtex
+@article{zhang2015character,
+  title={Character-level convolutional networks for text classification},
+  author={Zhang, Xiang and Zhao, Junbo and LeCun, Yann},
+  journal={Advances in neural information processing systems},
+  volume={28},
+  pages={649--657},
+  year={2015}
+}
+```
+
+- https://github.com/srviest/char-cnn-text-classification-pytorch
