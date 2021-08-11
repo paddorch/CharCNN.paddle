@@ -4,3 +4,4 @@ python train.py \
   --save_folder output/models_yahoo_answers\
   --batch_size 64 \
   --val_interval 2000
+  --data_augment True
