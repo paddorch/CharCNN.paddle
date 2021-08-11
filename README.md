@@ -12,7 +12,7 @@ A PaddlePaddle implementation of CharCNN.
 |  Datasets          | Paper error rate| Our error rate  | constract |
 |--------------------|-----------------|-----------------|--------|
 | AG’s News          | 13.39           | 10.17           | +3.22  |
-| Yahoo! Answers     | 28.80           |                 | +      |
+| Yahoo! Answers     | 28.80           | 28.69           | +      |
 | Amazon Review Full | 40.45           | 38.97           | +1.48  |
 
 ## 3. Dataset
