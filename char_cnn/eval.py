@@ -31,12 +31,15 @@ parser.add_argument('--alphabet-path', default='config/alphabet.json', help='Con
 # device
 parser.add_argument('--num-workers', default=4, type=int, help='Number of workers used in data-loading')
 parser.add_argument('--cuda', action='store_true', default=True, help='enable the gpu')
+parser.add_argument('--device', type=str, default='gpu:0')
 # logging options
 parser.add_argument('--save-folder', default='Results/', help='Location to save epoch models')
 args = parser.parse_args()
 
 
 if __name__ == '__main__':
+    paddle.set_device(args.device)
+
     # load testing data
     print("\nLoading testing data...")
     test_dataset = AGNEWs(label_data_path=args.test_path, alphabet_path=args.alphabet_path)
