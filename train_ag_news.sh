@@ -2,4 +2,5 @@ python train.py \
   --train_path data/ag_news_csv/train.csv.split_train \
   --val_path data/ag_news_csv/train.csv.split_val \
   --save_folder output/models_ag_news \
-  --data_augment True
+  --data_augment True \
+#  --continue_from output/models_ag_news/CharCNN_best.pth.tar
