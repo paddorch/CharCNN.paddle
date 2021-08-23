@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 import argparse
-import datetime
 import errno
-import sys
 import os
 
 import paddle
-import paddle.nn as nn
 import paddle.nn.functional as F
 from paddle import optimizer
 from paddle.io import DataLoader
@@ -27,13 +24,14 @@ parser.add_argument('--val_path', metavar='DIR',
                     help='path to validation data csv [default: data/ag_news_csv/test.csv]',
                     default='data/ag_news_csv/test.csv')
 parser.add_argument('--data_augment', type=bool, default=False, help='whether to use data augmentation')
+
 # learning
 learn = parser.add_argument_group('Learning options')
 learn.add_argument('--lr', type=float, default=0.0001, help='initial learning rate [default: 0.0001]')
 learn.add_argument('--epochs', type=int, default=200, help='number of epochs for train [default: 200]')
 learn.add_argument('--batch_size', type=int, default=64, help='batch size for training [default: 128]')  # TODO 64
 learn.add_argument('--grad_clip', default=5, type=int, help='Norm cutoff to prevent explosion of gradients')
-learn.add_argument('--optimizer', default='Adam',
+learn.add_argument('--optimizer', default='AdamW',
                    help='Type of optimizer. SGD|Adam|AdamW are supported [default: Adam]')
 learn.add_argument('--class_weight', default=None, action='store_true',
                    help='Weights should be a 1D Tensor assigning weight to each of the classes.')
@@ -42,19 +40,23 @@ learn.add_argument('--milestones', nargs='+', type=int, default=[5, 10, 15],
                    help=' List of epoch indices. Must be increasing. Default:[5,10,15]')
 learn.add_argument('--decay_factor', default=0.5, type=float,
                    help='Decay factor for reducing learning rate [default: 0.5]')
+
 # model (text classifier)
 cnn = parser.add_argument_group('Model options')
 cnn.add_argument('--alphabet_path', default='config/alphabet.json', help='Contains all characters for prediction')
 cnn.add_argument('--l0', type=int, default=1014, help='maximum length of input sequence to CNNs [default: 1014]')
 cnn.add_argument('--shuffle', action='store_true', default=True, help='shuffle the data every epoch')
 cnn.add_argument('--dropout', type=float, default=0.5, help='the probability for dropout [default: 0.5]')
-cnn.add_argument('-kernel_num', type=int, default=100, help='number of each kind of kernel')
-cnn.add_argument('-kernel_sizes', type=str, default='3,4,5', help='comma-separated kernel size to use for convolution')
+cnn.add_argument('--kernel_num', type=int, default=100, help='number of each kind of kernel')
+cnn.add_argument('--kernel_sizes', type=str, default='3,4,5', help='comma-separated kernel size to use for convolution')
+cnn.add_argument('--is_small', type=bool, default=False, help='Use small CharCNN model')
+
 # device
 device = parser.add_argument_group('Device options')
 device.add_argument('--num_workers', default=8, type=int, help='Number of workers used in data-loading')
 device.add_argument('--cuda', action='store_true', default=True, help='enable the gpu')
 device.add_argument('--device', type=int, default=None)
+
 # experiment options
 experiment = parser.add_argument_group('Experiment options')
 experiment.add_argument('--verbose', dest='verbose', action='store_true', default=False,
@@ -107,7 +109,7 @@ def train(train_loader, dev_loader, model, args):
         else:
             start_iter += 1
         model.set_state_dict(checkpoint['state_dict'])
-        # optim.load_state_dict(checkpoint['optimizer'])  # TODO Paddle not support
+        optim.set_state_dict(checkpoint['optimizer'])
     else:
         start_epoch = 1
         start_iter = 1
@@ -128,7 +130,6 @@ def train(train_loader, dev_loader, model, args):
             logit = model(inputs)
             loss = F.nll_loss(logit, target)
             loss.backward()
-            # nn.utils.clip_grad_norm(model.parameters(), args.max_norm)  # TODO
             optim.step()
             optim.clear_grad()
 
@@ -184,11 +185,6 @@ def eval(data_loader, model, epoch_train, batch_train, optim, args):
         inputs, target = data
 
         size += len(target)
-        # if args.cuda:
-        #     inputs, target = inputs.cuda(), target.cuda()
-
-        # inputs = Variable(inputs, volatile=True)
-        # target = Variable(target)
         target = target.squeeze()
         logit = model(inputs)
         predicates = paddle.argmax(logit, 1)
@@ -285,7 +281,7 @@ def main():
         with open(os.path.join(args.save_folder, 'result.csv'), 'w') as r:
             r.write('{:s},{:s},{:s},{:s},{:s}'.format('epoch', 'batch', 'loss', 'acc', 'lr'))
     # model
-    model = CharCNN(args.num_features, len(num_class_train), args.dropout)
+    model = CharCNN(args.num_features, len(num_class_train), args.dropout, is_small=args.is_small)
     print(model)
 
     # train 

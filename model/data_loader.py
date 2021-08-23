@@ -78,7 +78,7 @@ class AGNEWs(Dataset):
         class_weight = [num_samples / float(self.label.count(c)) for c in label_set]
         return class_weight, num_class
 
-    def dataAugment(self, text):
+    def dataAugment(self, text: str):
         if random.random() > 0.5:  # synonyms replace with p = 0.5
             text = self.aug.augment(text)[:self.l0]  # can't exceed l0
         return text
@@ -91,18 +91,11 @@ def _test():
     train_dataset = AGNEWs(label_data_path, alphabet_path, data_augment=True)
     train_loader = DataLoader(train_dataset, batch_size=64, num_workers=4, drop_last=False)
 
-    # size = 0
     for i_batch, sample_batched in enumerate(train_loader):
         if i_batch == 0:
             print(sample_batched)
             print(sample_batched[0][0][0].shape)
 
-        # print(sample_batched)
-        # len(i_batch)
-        # print(sample_batched['label'].size())
-        # inputs = sample_batched['data']
-        # print(inputs.size())
-        # print('type(target): ', target)
 
 def _test_data_augment(text):
     aug = naw.SynonymAug(aug_src='wordnet')
@@ -112,7 +105,8 @@ def _test_data_augment(text):
     print("Augmented Text:")
     print(augmented_text)
 
+
 if __name__ == '__main__':
-    _test_data_augment("The quick brown fox jumps over the lazy dog .")
-    _test_data_augment("The quick brown fox jumps over the lazy dog .")
-    # _test()
+    # _test_data_augment("The quick brown fox jumps over the lazy dog .")
+    # _test_data_augment("The quick brown fox jumps over the lazy dog .")
+    _test()

@@ -73,7 +73,7 @@ bash eval_amz_full.sh
 
 [comment]: <> (以表格的信息，给出模型相关的信息)
 
-## Implementation Details
+## 6. Implementation Details
 ### Data Augumentation
 We use [nlpaug](https://github.com/makcedward/nlpaug) to augment data, specifically, we substitute similar word according to `WordNet`.
 
