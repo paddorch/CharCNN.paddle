@@ -54,9 +54,12 @@ bash train_ag_news.sh
 ```
 
 ### Download Trained model
-
+Small model:
 - [Yahoo! Answers](https://cowtransfer.com/s/072615db611047)
 - [Amazon Review Full](https://cowtransfer.com/s/fe850b441bfa4e)
+
+Large model:
+- [Yahoo! Answers & Amazon Review Full](https://drive.google.com/drive/folders/1tHCCQWqj47V4Q84fohep7WYbdwQloJag?usp=sharing)
 
 > 将模型分别放置于 `output/models_yahoo_answers/` 和 `output/models_amz_full` 目录下，如下运行 `eval` bash 脚本即可测试模型。
 
