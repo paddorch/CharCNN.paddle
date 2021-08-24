@@ -79,7 +79,7 @@ bash eval_amz_full.sh
 ### Data Augumentation
 We use [nlpaug](https://github.com/makcedward/nlpaug) to augment data, specifically, we substitute similar word according to `WordNet`.
 
-there's two implementation: `SynonymAug` and `GeometricSynonymAug`, `GeometricSynonymAug` is our adapted version of `SynonymAug`, which leverages geometric distribution in substitution as described in the CharCNN paper.
+there's two implementation: `SynonymAug` and [`GeometricSynonymAug`](https://github.com/paddorch/CharCNN.paddle/blob/main/utils/augmenter.py#L6), `GeometricSynonymAug` is our adapted version of `SynonymAug`, which leverages geometric distribution in substitution as described in the CharCNN paper.
 
 Augumentation demos:
 ```
