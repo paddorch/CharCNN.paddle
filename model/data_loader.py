@@ -1,16 +1,18 @@
 #!/usr/bin/env python3
 import json
 import csv
+import random
 import numpy as np
 
 import paddle
-import nlpaug.augmenter.word as naw
 from paddle.io import Dataset, DataLoader
-import random
+
+from nlpaug.augmenter.word import SynonymAug
+from utils.augmenter import GeometricSynonymAug
 
 
 class AGNEWs(Dataset):
-    def __init__(self, label_data_path, alphabet_path, l0=1014, data_augment=False):
+    def __init__(self, label_data_path, alphabet_path, l0=1014, data_augment=False, geo_aug=False):
         """Create AG's News dataset object.
 
         Arguments:
@@ -28,7 +30,7 @@ class AGNEWs(Dataset):
         #     import nltk
         #     nltk.download('wordnet')
         #     nltk.download('averaged_perceptron_tagger')
-            self.aug = naw.SynonymAug(aug_src='wordnet')
+            self.aug = GeometricSynonymAug(aug_src='wordnet') if geo_aug else SynonymAug(aug_src='wordnet')
 
     def __len__(self):
         return len(self.label)
@@ -88,25 +90,15 @@ def _test():
     label_data_path = '../data/ag_news_csv/test.csv'
     alphabet_path = '../config/alphabet.json'
 
-    train_dataset = AGNEWs(label_data_path, alphabet_path, data_augment=True)
+    train_dataset = AGNEWs(label_data_path, alphabet_path, data_augment=True, geo_aug=True)
     train_loader = DataLoader(train_dataset, batch_size=64, num_workers=4, drop_last=False)
 
     for i_batch, sample_batched in enumerate(train_loader):
         if i_batch == 0:
-            print(sample_batched)
-            print(sample_batched[0][0][0].shape)
-
-
-def _test_data_augment(text):
-    aug = naw.SynonymAug(aug_src='wordnet')
-    augmented_text = aug.augment(text)
-    print("Original:")
-    print(text)
-    print("Augmented Text:")
-    print(augmented_text)
+            pass
+            # print(sample_batched)
+            # print(sample_batched[0][0][0].shape)
 
 
 if __name__ == '__main__':
-    # _test_data_augment("The quick brown fox jumps over the lazy dog .")
-    # _test_data_augment("The quick brown fox jumps over the lazy dog .")
     _test()

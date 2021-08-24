@@ -1,5 +1,6 @@
 python eval.py \
-  --test-path='data/AmazonReviewFull/amazon_review_full_csv/test.csv' \
-  --model-path='output/models_amz_full/CharCNN_best.pth.tar'
+  --test-path=data/amazon_review_full_csv/test.csv \
+  --model-path=output/models_amz_full/CharCNN_best.pth.tar
+#  --test-path=/hy-tmp/datasets/amazon_review_full_csv/test.csv \
+#  --model-path=/hy-tmp/output/models_amz_full/CharCNN_best.pth.tar \
 #  --device='gpu:2'
-#  --test-path='/home/xuyichen/.paddlenlp/datasets/AmazonReviewFull/amazon_review_full_csv/test.csv' \

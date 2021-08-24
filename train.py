@@ -2,6 +2,7 @@
 import argparse
 import errno
 import os
+import sys
 
 import paddle
 import paddle.nn.functional as F
@@ -19,17 +20,18 @@ parser = argparse.ArgumentParser(description='Character level CNN text classifie
 # data 
 parser.add_argument('--train_path', metavar='DIR',
                     help='path to training data csv [default: data/ag_news_csv/train.csv]',
-                    default='data/ag_news_csv/train.csv')  # TODO
+                    default='data/ag_news_csv/train.csv')
 parser.add_argument('--val_path', metavar='DIR',
                     help='path to validation data csv [default: data/ag_news_csv/test.csv]',
                     default='data/ag_news_csv/test.csv')
 parser.add_argument('--data_augment', type=bool, default=False, help='whether to use data augmentation')
+parser.add_argument('--geo_aug', type=bool, default=False, help='use GeometricSynonymAug in paper')
 
 # learning
 learn = parser.add_argument_group('Learning options')
-learn.add_argument('--lr', type=float, default=0.0001, help='initial learning rate [default: 0.0001]')
-learn.add_argument('--epochs', type=int, default=200, help='number of epochs for train [default: 200]')
-learn.add_argument('--batch_size', type=int, default=64, help='batch size for training [default: 128]')  # TODO 64
+learn.add_argument('--lr', type=float, default=0.0003, help='initial learning rate [default: 0.0001]')
+learn.add_argument('--epochs', type=int, default=100, help='number of epochs for train [default: 200]')
+learn.add_argument('--batch_size', type=int, default=128, help='batch size for training [default: 128]')
 learn.add_argument('--grad_clip', default=5, type=int, help='Norm cutoff to prevent explosion of gradients')
 learn.add_argument('--optimizer', default='AdamW',
                    help='Type of optimizer. SGD|Adam|AdamW are supported [default: Adam]')
@@ -49,11 +51,11 @@ cnn.add_argument('--shuffle', action='store_true', default=True, help='shuffle t
 cnn.add_argument('--dropout', type=float, default=0.5, help='the probability for dropout [default: 0.5]')
 cnn.add_argument('--kernel_num', type=int, default=100, help='number of each kind of kernel')
 cnn.add_argument('--kernel_sizes', type=str, default='3,4,5', help='comma-separated kernel size to use for convolution')
-cnn.add_argument('--is_small', type=bool, default=False, help='Use small CharCNN model')
+cnn.add_argument('--is_small', type=bool, default=False, help='use small CharCNN model')
 
 # device
 device = parser.add_argument_group('Device options')
-device.add_argument('--num_workers', default=8, type=int, help='Number of workers used in data-loading')
+device.add_argument('--num_workers', default=4, type=int, help='Number of workers used in data-loading')
 device.add_argument('--cuda', action='store_true', default=True, help='enable the gpu')
 device.add_argument('--device', type=int, default=None)
 
@@ -70,11 +72,11 @@ experiment.add_argument('--save_folder', default='output/models_AG_NEWS',  # TOD
                         help='Location to save epoch models, training configurations and results.')
 experiment.add_argument('--log_config', default=True, action='store_true', help='Store experiment configuration')
 experiment.add_argument('--log_result', default=True, action='store_true', help='Store experiment result')
-experiment.add_argument('--log_interval', type=int, default=20,
+experiment.add_argument('--log_interval', type=int, default=100,
                         help='how many steps to wait before logging training status [default: 1]')
 experiment.add_argument('--val_interval', type=int, default=600,
                         help='how many steps to wait before vaidation [default: 400]')
-experiment.add_argument('--save_interval', type=int, default=1,
+experiment.add_argument('--save_interval', type=int, default=5,
                         help='how many epochs to wait before saving [default:1]')
 
 
@@ -103,6 +105,7 @@ def train(train_loader, dev_loader, model, args):
         start_epoch = checkpoint['epoch']
         start_iter = checkpoint.get('iter', None)
         best_acc = checkpoint.get('best_acc', None)
+        print("=> checkpoint best acc: {}".format(best_acc))
         if start_iter is None:
             start_epoch += 1  # Assume that we saved a model after an epoch finished, so start at the next epoch.
             start_iter = 1
@@ -151,8 +154,10 @@ def train(train_loader, dev_loader, model, args):
                                                                                                   corrects,
                                                                                                   args.batch_size,
                                                                                                   ))
-            if i_batch % args.val_interval == 0:
-                val_loss, val_acc = eval(dev_loader, model, epoch, i_batch, optim, args)
+                sys.stdout.flush()
+
+            # if i_batch % args.val_interval == 0:
+            #     val_loss, val_acc = eval(dev_loader, model, epoch, i_batch, optim, args)
 
         if args.checkpoint and epoch % args.save_interval == 0:
             file_path = '%s/CharCNN_epoch_%d.pth.tar' % (args.save_folder, epoch)
@@ -174,7 +179,9 @@ def train(train_loader, dev_loader, model, args):
                              'best_acc': best_acc},
                             file_path)
             best_acc = val_acc
+        start_iter = 1
         print('\n')
+        sys.stdout.flush()
 
 
 def eval(data_loader, model, epoch_train, batch_train, optim, args):
@@ -204,6 +211,7 @@ def eval(data_loader, model, epoch_train, batch_train, optim, args):
                                                                                               100.0 - accuracy))
     print_f_score(predicates_all, target_all)
     print('\n')
+    sys.stdout.flush()
     if args.log_result:
         with open(os.path.join(args.save_folder, 'result.csv'), 'a') as r:
             r.write('\n{:d},{:d},{:.5f},{:.2f},{:f}'.format(epoch_train,
@@ -220,9 +228,9 @@ def save_checkpoint(model, state, filename):
     paddle.save(state, filename)
 
 
-def make_data_loader(dataset_path, alphabet_path, l0, batch_size, num_workers, data_augment=False):
+def make_data_loader(dataset_path, alphabet_path, l0, batch_size, num_workers, data_augment=False, geo_aug=False):
     print("\nLoading data from {}".format(dataset_path))
-    dataset = AGNEWs(label_data_path=dataset_path, alphabet_path=alphabet_path, l0=l0, data_augment=data_augment)
+    dataset = AGNEWs(label_data_path=dataset_path, alphabet_path=alphabet_path, l0=l0, data_augment=data_augment, geo_aug=geo_aug)
     dataset_loader = DataLoader(dataset, batch_size=batch_size, num_workers=num_workers, drop_last=True, shuffle=True)
     return dataset, dataset_loader
 
@@ -237,7 +245,8 @@ def main():
 
     # load train and dev data
     train_dataset, train_loader = make_data_loader(args.train_path,
-                                                   args.alphabet_path, args.l0, args.batch_size, args.num_workers, args.data_augment)
+                                                   args.alphabet_path, args.l0, args.batch_size,
+                                                   args.num_workers, args.data_augment, args.geo_aug)
     dev_dataset, dev_loader = make_data_loader(args.val_path,
                                                args.alphabet_path, args.l0, args.batch_size, args.num_workers)
 

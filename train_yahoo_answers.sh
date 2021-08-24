@@ -1,11 +1,10 @@
 python train.py \
-  --train_path /home/xuyichen/.paddlenlp/datasets/YahooAnswers/yahoo_answers_csv/train.csv.split_train \
-  --val_path /home/xuyichen/.paddlenlp/datasets/YahooAnswers/yahoo_answers_csv/train.csv.split_dev \
-  --save_folder output/models_yahoo_answers_2 \
-  --batch_size 64 \
-  --gpu 3 \
-  --val_interval 2000 \
+  --train_path /hy-tmp/datasets/yahoo_answers_csv/train.csv.split_train \
+  --val_path /hy-tmp/datasets/yahoo_answers_csv/train.csv.split_val \
+  --save_folder /hy-tmp/output/models_yahoo_answers \
+  --batch_size 128 \
   --data_augment True \
+#  --continue_from /hy-tmp/output/models_yahoo_answers/CharCNN_best.pth.tar
+#  --save_folder output/models_yahoo_answers \
+#  --gpu 3 \
 
-#  --train_path /hy-tmp/datasets/yahoo_answers_csv/train.csv.split_train \
-#  --val_path /hy-tmp/datasets/yahoo_answers_csv/train.csv.split_dev \
