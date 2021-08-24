@@ -9,11 +9,11 @@ A PaddlePaddle implementation of CharCNN.
 
 ## 2. Results
 
-|  Datasets          | Paper error rate <br> (large / small)| Our error rate <br> (large / small) | abs. improv. |
-|--------------------|-----------------|-----------------|-------|
-| AG’s News          | 13.39 / 14.80   | 9.38 / 10.17    | 4.01 / 4.63  |
-| Yahoo! Answers     | 28.80 / 29.84   | 27.73 / 28.69   | 1.07 / 1.15  |
-| Amazon Review Full | 40.45 / 40.43   | 38.22 / 38.97   | 2.23 / 1.46  |
+|  Datasets          | Paper error rate <br> (large / small)| Our error rate <br> (large / small) | abs. improv. <br> (large / small) | epochs |
+|--------------------|-----------------|-----------------|--------------|:---:|
+| AG’s News          | 13.39 / 14.80   | 9.38 / 10.17    | 4.01 / 4.63  | 60  |
+| Yahoo! Answers     | 28.80 / 29.84   | 27.73 / 28.69   | 1.07 / 1.15  | 15  |
+| Amazon Review Full | 40.45 / 40.43   | 38.22 / 38.97   | 2.23 / 1.46  | 7   |
 
 > Note: the `large` model has not yet converged, and the accuracy can be improved by continuing training.
 
